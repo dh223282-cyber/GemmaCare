@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "350885153107",
+    "project_id": "gemmacare-dba2a",
+    "storage_bucket": "gemmacare-dba2a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350885153107:android:26f73359c0ab74e670f9a6",
+        "android_client_info": {
+          "package_name": "com.gemmacare.gemmacare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzePpveEKgGzWAy2oW11zDbu80ChPEcKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
