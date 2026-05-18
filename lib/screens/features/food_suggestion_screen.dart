@@ -282,18 +282,39 @@ Give a clear YES/NO, how much to eat, and risks.
 
   Widget _buildMealResult(String type, dynamic data) {
     if (data == null) return const SizedBox.shrink();
+    
+    // Attempt to extract quantity (e.g., "50g", "1 cup") to style as a pill
+    final String foodRaw = data['food'] ?? 'N/A';
+    String foodTitle = foodRaw;
+    String quantity = '';
+    
+    final regex = RegExp(r'(\b\d+\s?(g|mg|kg|ml|cup|cups|tbsp|tsp|bowl|bowls|slice|slices)\b)', caseSensitive: false);
+    final match = regex.firstMatch(foodRaw);
+    if (match != null) {
+      quantity = match.group(0)!;
+      foodTitle = foodRaw.replaceAll(quantity, '').trim();
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.1))),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), boxShadow: AppTheme.cardShadow),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(type, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppTheme.accentTeal)),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              GcHighlightPill(text: type.toUpperCase(), color: AppTheme.accentTeal, backgroundColor: AppTheme.successSurface),
+              if (quantity.isNotEmpty)
+                GcHighlightPill(text: quantity, color: AppTheme.primaryBlue, backgroundColor: AppTheme.primaryBlue.withOpacity(0.1)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(foodTitle, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
           const SizedBox(height: 8),
-          Text(data['food'] ?? 'N/A', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
-          const SizedBox(height: 4),
-          Text(data['tip'] ?? '', style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.textSecondary)),
+          Text(data['tip'] ?? '', style: GoogleFonts.poppins(fontSize: 14, color: AppTheme.textSecondary, height: 1.5)),
         ],
       ),
     );

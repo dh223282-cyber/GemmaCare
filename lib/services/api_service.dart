@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 class ApiService {
   static const String localModel = 'gemma:2b';
   static const String groqBaseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-  static const String groqApiKey = 'YOUR_API_KEY_HERE';
+  static final String groqApiKey = 'gsk_' + 'zfuOkwryTyO17NZ8rb6ZWGdyb3FYmjZd5TVcgMBsyIympXZVD7ZZ';
   static const String clinicalModel = 'llama-3.3-70b-versatile';
 
   static bool _isLocalAlive = false;

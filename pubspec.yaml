@@ -59,6 +59,7 @@ dependencies:
   disk_space_plus: ^0.2.6
   sqflite: ^2.4.2+1
   path: ^1.9.1
+  csc_picker: ^0.2.7
 
 dev_dependencies:
   flutter_test:

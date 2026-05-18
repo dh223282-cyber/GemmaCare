@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:csc_picker/csc_picker.dart';
 import '../../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -19,45 +21,61 @@ class _SignupScreenState extends State<SignupScreen> {
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
 
-  String? _selectedCountry;
-  String? _selectedCity;
+  String _selectedCountry = "";
+  String _selectedState = "";
+  String _selectedCity = "";
   bool _isLoading = false;
-
-  final Map<String, List<String>> _countryCities = {
-    'Sri Lanka': ['Colombo', 'Kandy', 'Wattala', 'Galle', 'Jaffna'],
-    'India': ['Mumbai', 'Delhi', 'Chennai', 'Bangalore'],
-    'United States': ['New York', 'Los Angeles', 'Chicago', 'Houston'],
-    'United Kingdom': ['London', 'Manchester', 'Birmingham', 'Edinburgh'],
-  };
 
   void _signup() async {
     if (_nameCtrl.text.isEmpty || _emailCtrl.text.isEmpty || _passwordCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill basic details")));
       return;
     }
-    if (_selectedCountry == null || _selectedCity == null) {
+    if (_selectedCountry.isEmpty || _selectedCity.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select Country and City")));
       return;
     }
 
     setState(() => _isLoading = true);
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final error = await authService.signUp(
-      email: _emailCtrl.text,
-      password: _passwordCtrl.text,
-      name: _nameCtrl.text,
-      age: int.tryParse(_ageCtrl.text) ?? 0,
-      height: double.tryParse(_heightCtrl.text) ?? 0.0,
-      weight: double.tryParse(_weightCtrl.text) ?? 0.0,
-      country: _selectedCountry!,
-      city: _selectedCity!,
-    );
     
-    if (mounted) {
-      setState(() => _isLoading = false);
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final error = await authService.signUp(
+        email: _emailCtrl.text,
+        password: _passwordCtrl.text,
+        name: _nameCtrl.text,
+        age: int.tryParse(_ageCtrl.text) ?? 0,
+        height: double.tryParse(_heightCtrl.text) ?? 0.0,
+        weight: double.tryParse(_weightCtrl.text) ?? 0.0,
+        country: _selectedCountry,
+        city: _selectedCity,
+      ).timeout(const Duration(seconds: 5));
+      
       if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
-      } else {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+        }
+        return;
+      }
+
+      // Background tasks (Save to SharedPreferences) with timeout to prevent hangs
+      try {
+        await Future(() async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userCountry', _selectedCountry.isNotEmpty ? _selectedCountry : 'DefaultCountry');
+          await prefs.setString('userCity', _selectedCity.isNotEmpty ? _selectedCity : 'DefaultCity');
+        }).timeout(const Duration(seconds: 3));
+      } catch (e) {
+        debugPrint("Background prefs save failed/timed out: $e");
+      }
+      
+    } catch (e) {
+      debugPrint("Signup process error: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // Guarantee navigation safely
         Navigator.pop(context); // Go back as StreamBuilder redirects to Home
       }
     }
@@ -102,52 +120,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildPremiumDropdown({
-    required String hint,
-    required IconData icon,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<String>(
-          value: value,
-          icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: Colors.transparent,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, style: GoogleFonts.poppins()),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -213,29 +186,43 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   _buildPremiumTextField(controller: _weightCtrl, hint: 'Weight (kg)', icon: Icons.monitor_weight_outlined, type: TextInputType.number),
                   
-                  _buildPremiumDropdown(
-                    hint: 'Select Country',
-                    icon: Icons.public,
-                    value: _selectedCountry,
-                    items: _countryCities.keys.toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedCountry = val;
-                        _selectedCity = null; // reset city when country changes
-                      });
-                    },
-                  ),
-                  
-                  _buildPremiumDropdown(
-                    hint: 'Select City',
-                    icon: Icons.location_city,
-                    value: _selectedCity,
-                    items: _selectedCountry != null ? _countryCities[_selectedCountry!]! : [],
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedCity = val;
-                      });
-                    },
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    child: CSCPicker(
+                      showStates: true,
+                      showCities: true,
+                      flagState: CountryFlag.ENABLE,
+                      dropdownDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.white.withOpacity(0.8),
+                        border: Border.all(color: Colors.transparent),
+                      ),
+                      disabledDropdownDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.grey.shade300,
+                        border: Border.all(color: Colors.transparent),
+                      ),
+                      countrySearchPlaceholder: "Country",
+                      stateSearchPlaceholder: "State",
+                      citySearchPlaceholder: "City",
+                      countryDropdownLabel: "*Country",
+                      stateDropdownLabel: "*State",
+                      cityDropdownLabel: "*City",
+                      selectedItemStyle: GoogleFonts.poppins(color: Colors.black, fontSize: 14),
+                      dropdownHeadingStyle: GoogleFonts.poppins(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold),
+                      dropdownItemStyle: GoogleFonts.poppins(color: Colors.black, fontSize: 14),
+                      dropdownDialogRadius: 15.0,
+                      searchBarRadius: 15.0,
+                      onCountryChanged: (value) {
+                        setState(() { _selectedCountry = value; });
+                      },
+                      onStateChanged: (value) {
+                        setState(() { _selectedState = value ?? ""; });
+                      },
+                      onCityChanged: (value) {
+                        setState(() { _selectedCity = value ?? ""; });
+                      },
+                    ),
                   ),
                   
                   const SizedBox(height: 32),

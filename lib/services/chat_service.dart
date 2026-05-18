@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'gemma_manager.dart';
 
 /// Enum representing the currently active AI engine.
@@ -61,6 +62,18 @@ Use clear, empathetic language and Markdown formatting for structured responses.
   // ── Core method: send a chat message ───────────────────────
   Future<String> sendMessage(String userMessage) async {
     final bool isOffline = isForceOffline || !(await _hasInternet());
+
+    // Inject Context Logic for Diet/Medicine
+    final lowerMsg = userMessage.toLowerCase();
+    if (lowerMsg.contains('diet') || lowerMsg.contains('medicine') || lowerMsg.contains('food')) {
+      final prefs = await SharedPreferences.getInstance();
+      final city = prefs.getString('userCity') ?? '';
+      final country = prefs.getString('userCountry') ?? '';
+      
+      if (city.isNotEmpty && country.isNotEmpty) {
+        userMessage = "Context: Considering the user is located in $city, $country, suggest a plan using locally available food items/medicines and seasonal ingredients.\n\nUser Question: $userMessage";
+      }
+    }
 
     if (!isOffline) {
       return _tryOnline(userMessage);

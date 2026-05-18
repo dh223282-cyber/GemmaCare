@@ -47,7 +47,7 @@ class _MainLayoutState extends State<MainLayout> {
       );
     } else {
       // Auto-load model in background — no blocking UI
-      manager.loadModel();
+      Future.microtask(() => manager.loadModel());
     }
   }
 
