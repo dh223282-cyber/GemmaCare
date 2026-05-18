@@ -41,17 +41,40 @@ class BiometricsScreen extends StatelessWidget {
   Widget _buildDeviceCard(String name, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceWhite, 
+        borderRadius: BorderRadius.circular(AppTheme.radiusXl), 
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.primaryBlue, size: 32),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
+          ),
           const SizedBox(width: 16),
-          Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryBlue)),
-          const Spacer(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text('Tap to sync data', style: GoogleFonts.poppins(fontSize: 11, color: AppTheme.textSecondary)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {},
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryBlue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Connect'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue, 
+              foregroundColor: Colors.white, 
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+            ),
+            child: Text('Add', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
